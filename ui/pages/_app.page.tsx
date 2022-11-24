@@ -32,7 +32,7 @@ export default function App() {
     (async () => {
       if (!state.hasBeenSetup) {
         const zkappWorkerClient = new ZkappWorkerClient();
-        
+
         console.log('Loading SnarkyJS...');
         await zkappWorkerClient.loadSnarkyJS();
         console.log('done');
@@ -46,7 +46,7 @@ export default function App() {
           return;
         }
 
-        const publicKeyBase58 : string = (await mina.requestAccounts())[0];
+        const publicKeyBase58: string = (await mina.requestAccounts())[0];
         const publicKey = PublicKey.fromBase58(publicKeyBase58);
 
         console.log('using key', publicKey.toBase58());
@@ -61,7 +61,8 @@ export default function App() {
         await zkappWorkerClient.compileContract();
         console.log('zkApp compiled');
 
-        const zkappPublicKey = PublicKey.fromBase58('B62qph2VodgSo5NKn9gZta5BHNxppgZMDUihf1g7mXreL4uPJFXDGDA');
+        //const zkappPublicKey = PublicKey.fromBase58('B62qph2VodgSo5NKn9gZta5BHNxppgZMDUihf1g7mXreL4uPJFXDGDA');
+        const zkappPublicKey = PublicKey.fromBase58('B62qq2YbQ1bagEGAwMQD3u7wVtW7Qe98X8TJcT47JKT8wrPZU926VQi');
 
         await zkappWorkerClient.initZkappInstance(zkappPublicKey);
 
@@ -70,15 +71,15 @@ export default function App() {
         const currentNum = await zkappWorkerClient.getNum();
         console.log('current state:', currentNum.toString());
 
-        setState({ 
-            ...state, 
-            zkappWorkerClient, 
-            hasWallet: true,
-            hasBeenSetup: true, 
-            publicKey, 
-            zkappPublicKey, 
-            accountExists, 
-            currentNum
+        setState({
+          ...state,
+          zkappWorkerClient,
+          hasWallet: true,
+          hasBeenSetup: true,
+          publicKey,
+          zkappPublicKey,
+          accountExists,
+          currentNum
         });
       }
     })();
@@ -90,7 +91,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       if (state.hasBeenSetup && !state.accountExists) {
-        for (;;) {
+        for (; ;) {
           console.log('checking if account exists...');
           const res = await state.zkappWorkerClient!.fetchAccount({ publicKey: state.publicKey! })
           const accountExists = res.error == null;
@@ -122,17 +123,20 @@ export default function App() {
     const transactionJSON = await state.zkappWorkerClient!.getTransactionJSON()
 
     console.log('requesting send transaction...');
-    const { hash } = await (window as any).mina.sendTransaction({
-      transaction: transactionJSON,
-      feePayer: {
-        fee: transactionFee,
-        memo: '',
-      },
-    });
-
-    console.log(
-      'See transaction at https://berkeley.minaexplorer.com/transaction/' + hash
-    );
+    try {
+      const { hash } = await (window as any).mina.sendTransaction({
+        transaction: transactionJSON,
+        feePayer: {
+          fee: transactionFee,
+          memo: '',
+        },
+      });
+      console.log(
+        'See transaction at https://berkeley.minaexplorer.com/transaction/' + hash
+      );
+    } catch (e) {
+      console.error(e);
+    }
 
     setState({ ...state, creatingTransaction: false });
   }
@@ -156,11 +160,11 @@ export default function App() {
   if (state.hasWallet != null && !state.hasWallet) {
     const auroLink = 'https://www.aurowallet.com/';
     const auroLinkElem = <a href={auroLink} target="_blank" rel="noreferrer"> [Link] </a>
-    hasWallet = <div> Could not find a wallet. Install Auro wallet here: { auroLinkElem }</div> 
+    hasWallet = <div> Could not find a wallet. Install Auro wallet here: {auroLinkElem}</div>
   }
 
   let setupText = state.hasBeenSetup ? 'SnarkyJS Ready' : 'Setting up SnarkyJS...';
-  let setup = <div> { setupText } { hasWallet }</div>
+  let setup = <div> {setupText} {hasWallet}</div>
 
   let accountDoesNotExist;
   if (state.hasBeenSetup && !state.accountExists) {
@@ -175,14 +179,14 @@ export default function App() {
   if (state.hasBeenSetup && state.accountExists) {
     mainContent = <div>
       <button onClick={onSendTransaction} disabled={state.creatingTransaction}> Send Transaction </button>
-      <div> Current Number in zkApp: { state.currentNum!.toString() } </div>
+      <div> Current Number in zkApp: {state.currentNum!.toString()} </div>
       <button onClick={onRefreshCurrentNum}> Get Latest State </button>
     </div>
   }
 
   return <div>
-   { setup }
-   { accountDoesNotExist }
-   { mainContent }
+    {setup}
+    {accountDoesNotExist}
+    {mainContent}
   </div>
 }
